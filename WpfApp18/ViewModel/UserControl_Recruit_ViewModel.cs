@@ -1,10 +1,13 @@
 ﻿using ComboBox_Enum.WpfApp18;
 using Model.WpfApp18;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -221,7 +224,7 @@ namespace ViewModel.WpfApp18
             #region for문
             //foreach (var item in Custlist)
             //{
-            //    if((item.ACDMCR_NM == E_ACDMCR_CMMN_CODE_SE_selectedItem_Myinfo.ToString() || E_ACDMCR_CMMN_CODE_SE_selectedItem_Myinfo == E_ACDMCR_CMMN_CODE_SE.전체) && (item.EMPLYM_STLE_CMMN_MM == E_EMPLYM_STLE_CMMN_CODE_SE_selectedItem_Myinfo.ToString() || E_EMPLYM_STLE_CMMN_CODE_SE_selectedItem_Myinfo == E_EMPLYM_STLE_CMMN_CODE_SE.전체) && (item.CAREER_CND_NM == E_CAREER_CND_CMMN_CODE_SE_selectedItem_Myinfo.ToString() || E_CAREER_CND_CMMN_CODE_SE_selectedItem_Myinfo == E_CAREER_CND_CMMN_CODE_SE.전체))
+            //    if((item.ACDMCR_NM == Workspace.Instance.Usercontrol_myinfo_viewmodel.E_ACDMCR_CMMN_CODE_SE_selectedItem_Myinfo.ToString() || Workspace.Instance.Usercontrol_myinfo_viewmodel.E_ACDMCR_CMMN_CODE_SE_selectedItem_Myinfo == E_ACDMCR_CMMN_CODE_SE.전체) && (item.EMPLYM_STLE_CMMN_MM == Workspace.Instance.Usercontrol_myinfo_viewmodel.E_EMPLYM_STLE_CMMN_CODE_SE_selectedItem_Myinfo.ToString() || Workspace.Instance.Usercontrol_myinfo_viewmodel.E_EMPLYM_STLE_CMMN_CODE_SE_selectedItem_Myinfo == E_EMPLYM_STLE_CMMN_CODE_SE.전체) && (item.CAREER_CND_NM == Workspace.Instance.Usercontrol_myinfo_viewmodel.E_CAREER_CND_CMMN_CODE_SE_selectedItem_Myinfo.ToString() || Workspace.Instance.Usercontrol_myinfo_viewmodel.E_CAREER_CND_CMMN_CODE_SE_selectedItem_Myinfo == E_CAREER_CND_CMMN_CODE_SE.전체))
             //    {
             //        item.ColorFlag = true;
             //    }
@@ -323,7 +326,7 @@ namespace ViewModel.WpfApp18
             #endregion
 
 
-            path = "http://openapi.seoul.go.kr:8088/68734f416a716e613535594b6d4f48/xml/GetJobInfo/1/100/" + ACDMCR_CMMN_CODE_SE_APIsting + EMPLYM_STLE_CMMN_CODE_SE_APIsting + CAREER_CND_CMMN_CODE_SE_APIsting;
+            path = "http://openapi.seoul.go.kr:8088/68734f416a716e613535594b6d4f48/json/GetJobInfo/1/100/" + ACDMCR_CMMN_CODE_SE_APIsting + EMPLYM_STLE_CMMN_CODE_SE_APIsting + CAREER_CND_CMMN_CODE_SE_APIsting;
 
             Custlist.Clear();
             OxReadXML();
@@ -335,22 +338,32 @@ namespace ViewModel.WpfApp18
 
         private void OxReadXML()
         {
-            XmlDocument xdoc = new XmlDocument();
-            xdoc.Load(path);
+            string result = null;
 
-            XmlNodeList nodesRow = xdoc.SelectNodes("/GetJobInfo/row");
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(path);
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
 
-            foreach (XmlNode node in nodesRow)
+            Stream stream = response.GetResponseStream();
+            StreamReader reader = new StreamReader(stream);
+            result = reader.ReadToEnd();
+            stream.Close();
+            response.Close();
+
+            JObject jobj = JObject.Parse(result);
+            JArray array = JArray.Parse(jobj["GetJobInfo"]["row"].ToString());
+
+
+            foreach (JObject itemobj in array)
             {
-                string CMPNY_NM_IT = node.SelectSingleNode("CMPNY_NM").InnerText; //기업명칭
-                string RCRIT_NMPR_CO_IT = node.SelectSingleNode("RCRIT_NMPR_CO").InnerText; //모집인원수
-                string WORK_TIME_NM_IT = node.SelectSingleNode("WORK_TIME_NM").InnerText; //근무시간
-                string RCEPT_MTH_IEM_NM_IT = node.SelectSingleNode("RCEPT_MTH_IEM_NM").InnerText; //전형장소
-                string MODEL_MTH_NM_IT = node.SelectSingleNode("MODEL_MTH_NM").InnerText; //전형방법
+                string CMPNY_NM_IT = itemobj["CMPNY_NM"].ToString(); //기업명칭
+                string RCRIT_NMPR_CO_IT = itemobj["RCRIT_NMPR_CO"].ToString(); //모집인원수
+                string WORK_TIME_NM_IT = itemobj["WORK_TIME_NM"].ToString(); //근무시간
+                string RCEPT_MTH_IEM_NM_IT = itemobj["RCEPT_MTH_IEM_NM"].ToString(); //전형장소
+                string MODEL_MTH_NM_IT = itemobj["MODEL_MTH_NM"].ToString(); //전형방법
 
-                string ACDMCR_NM_IT = node.SelectSingleNode("ACDMCR_NM").InnerText; //학력
-                string EMPLYM_STLE_CMMN_MM_IT = node.SelectSingleNode("EMPLYM_STLE_CMMN_MM").InnerText; //고용형태
-                string CAREER_CND_NM_IT = node.SelectSingleNode("CAREER_CND_NM").InnerText; //경력조건
+                string ACDMCR_NM_IT = itemobj["ACDMCR_NM"].ToString(); //학력
+                string EMPLYM_STLE_CMMN_MM_IT = itemobj["EMPLYM_STLE_CMMN_MM"].ToString(); //고용형태
+                string CAREER_CND_NM_IT = itemobj["CAREER_CND_NM"].ToString(); //경력조건
 
                 Custlist.Add(new Cust() { CMPNY_NM = CMPNY_NM_IT, RCRIT_NMPR_CO = RCRIT_NMPR_CO_IT, WORK_TIME_NM = WORK_TIME_NM_IT, RCEPT_MTH_IEM_NM = RCEPT_MTH_IEM_NM_IT, MODEL_MTH_NM = MODEL_MTH_NM_IT, ACDMCR_NM = ACDMCR_NM_IT, EMPLYM_STLE_CMMN_MM = EMPLYM_STLE_CMMN_MM_IT, CAREER_CND_NM = CAREER_CND_NM_IT });
             }
