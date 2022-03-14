@@ -1,5 +1,5 @@
 # Public-API
-공공API 내용을 xml파일로 불러와서 ComboBox와 List로 뿌려주기
+공공API 내용을 json파일로 불러와서 ComboBox와 List로 뿌려주기
 
 <br/>
 
